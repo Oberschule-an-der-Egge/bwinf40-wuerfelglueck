@@ -108,16 +108,18 @@ class Game:
     def one_turn(self, player):
         roll = player.roll_dice()
         print(f'-- {player} rolls', roll)
-        if roll == 6:
-            # Todo: If you roll a six, go again
+
+        while roll == 6:
             if self.is_position_blocked(player.startpos):
                 self.clear_position(player, roll, player.startpos)
-                return
+                continue
             elif not self.activate_pawn(player):
                 # No pawns left in base
                 self.move_pawn(player, roll)
-        else:
-            self.move_pawn(player, roll)
+            roll = player.roll_dice()
+            print(f'-- {player} rolls', roll)
+
+        self.move_pawn(player, roll)
 
     def move_pawn(self, player, roll, pawn=None):
         if not pawn:
