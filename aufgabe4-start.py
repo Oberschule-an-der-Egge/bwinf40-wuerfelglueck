@@ -9,10 +9,12 @@ def read_input(filename='wuerfel0.txt'):
     file = Path('beispieldaten', filename)
     with open(file, 'r') as file_in:
         dice_total = file_in.readline().strip()
-        dice = [line.strip() for line in file_in.readlines()]
+        dice_list = [line.strip().split() for line in file_in.readlines()]
+        for num, dice in enumerate(dice_list):
+            dice_list[num] = [int(element) for element in dice]
 
     print(dice_total)
-    print(dice)
+    print('dice_list', dice_list)
 
     return
 
