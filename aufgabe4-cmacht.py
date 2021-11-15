@@ -79,6 +79,9 @@ class Pawn:
         Pawn.previous_owner = self.owner
         self.id = Pawn.counter
 
+    def reset_moves_to_goal(self):
+        self.moves_to_goal = 39
+
     def __repr__(self):
         return f'\"Pawn {self.owner.id}-{self.id}\"'
 
@@ -121,18 +124,38 @@ class Game:
 
         self.move_pawn(player, roll)
 
+    def is_position_blocked(self, position):
+        if self.board[position]:
+            return True
+        return False
+
+    def clear_position(self, player, roll, position):
+        print('-- Clearing position...')
+        pawn = self.board[position]
+        if pawn.owner is player:
+            self.move_pawn(player, roll, pawn=pawn)
+        else:
+            self.throw_out_pawn(pawn)
+
     def move_pawn(self, player, roll, pawn=None):
         if not pawn:
             pawn = min(player.pawn_list, key=attrgetter('moves_to_goal'))
         idx = self.board.index(pawn)
         new_idx = idx + roll
-        self.board[idx] = None
         if self.is_position_blocked(new_idx):
             self.clear_position(player, roll, new_idx)
         else:
             print('-- Moving', pawn, 'by', roll)
+            self.board[idx] = None
             self.board[new_idx] = pawn
             pawn.moves_to_goal -= roll
+
+    def throw_out_pawn(self, pawn):
+        idx = self.board.index(pawn)
+        self.board[idx] = None
+        self.base.append(pawn)
+        pawn.reset_moves_to_goal()
+        print('-- Threw out', pawn)
 
     def activate_pawn(self, player):
         for pawn in player.pawn_list:
@@ -143,26 +166,6 @@ class Game:
                 return True
         print('!! No pawns in base')
         return False
-
-    def is_position_blocked(self, position):
-        if self.board[position]:
-            return True
-        return False
-
-    def clear_position(self, player, roll, position):
-        # Todo: Bug here, where two pawns on the field both move, but one disappears
-        pawn = self.board[position]
-        if pawn.owner is player:
-            self.move_pawn(player, roll, pawn=pawn)
-        else:
-            self.throw_out_pawn(pawn)
-
-    def throw_out_pawn(self, pawn):
-        idx = self.board.index(pawn)
-        self.board[idx] = None
-        self.base.append(pawn)
-        print('-- Threw out', pawn)
-
 
 def setup(dice_list):
     players_list = []
