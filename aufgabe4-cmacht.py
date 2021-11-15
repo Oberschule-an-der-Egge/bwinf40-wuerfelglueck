@@ -142,6 +142,8 @@ class Game:
             pawn = min(player.pawn_list, key=attrgetter('moves_to_goal'))
         idx = self.board.index(pawn)
         new_idx = idx + roll
+        if self.is_end_of_board(new_idx):
+            new_idx = new_idx - len(self.board)  # e.g. 43 (0-based) - 40 (1-based) = 3 -> 0,1,2,3 (0-based)
         if self.is_position_blocked(new_idx):
             self.clear_position(player, roll, new_idx)
         else:
@@ -166,6 +168,12 @@ class Game:
                 return True
         print('!! No pawns in base')
         return False
+
+    def is_end_of_board(self, position):
+        if position > (len(self.board) - 1):
+            return True
+        return False
+
 
 def setup(dice_list):
     players_list = []
