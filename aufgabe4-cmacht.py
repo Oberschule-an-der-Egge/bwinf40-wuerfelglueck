@@ -18,6 +18,8 @@ Auch die Zielfelder werden beim Vorrücken einzeln gezählt. (Wer also beispiels
 kommt mit einer 1 nur auf das Feld a, mit einer 2 nur auf das Feld b usw.; Spielsteine können übersprungen werden.)
 """
 import random
+import string
+from copy import deepcopy
 from itertools import chain
 from operator import attrgetter
 from pathlib import Path
@@ -65,7 +67,7 @@ class Pawn:
     previous_owner = None
 
     def __init__(self, owner):
-        self.id = 0
+        self.id = ''
         self.owner = owner
         self.moves_to_goal = 39
         self.position = None
@@ -77,23 +79,30 @@ class Pawn:
         else:
             Pawn.counter = 1
         Pawn.previous_owner = self.owner
-        self.id = Pawn.counter
+        self.id = string.ascii_lowercase[Pawn.counter - 1]
 
     def reset_moves_to_goal(self):
         self.moves_to_goal = 39
 
     def __repr__(self):
-        return f'\"Pawn {self.owner.id}-{self.id}\"'
+        return f'\"Pawn {self.owner.id}{self.id}\"'
+
+    @property
+    def short(self):
+        return f'{self.owner.id}{self.id}'
 
 
 class Game:
     def __init__(self, p1, p2):
         self.p1 = p1
         self.p1.startpos = 0
+        self.p1.endpos = 39
         self.p2 = p2
         self.p2.startpos = 20
+        self.p2.endpos = 19
         self.board = [None] * 40
         self.base = []
+        self.goal = []
         self.round = 1
         self.winner = None
 
@@ -147,10 +156,10 @@ class Game:
         if self.is_position_blocked(new_idx):
             self.clear_position(player, roll, new_idx)
         else:
-            print('-- Moving', pawn, 'by', roll)
             self.board[idx] = None
             self.board[new_idx] = pawn
             pawn.moves_to_goal -= roll
+            print(f'-- Moving {pawn} by {roll}. To goal: {pawn.moves_to_goal}')
 
     def throw_out_pawn(self, pawn):
         idx = self.board.index(pawn)
@@ -191,7 +200,43 @@ def do_simulation(player1, player2):
     game = Game(player1, player2)
 
     while game.round <= 10:
+        print(f'======== ROUND {game.round} ===========')
         game.play_round()
+        print_board(game)
+
+
+def print_board(game):
+    p1_list = game.p1.pawn_list
+    p2_list = game.p2.pawn_list
+    p1 = [''] * 4
+    p2 = [''] * 4
+
+    for idx, p in zip(range(4), p1_list):
+        value = p.short if p in game.base else '__'
+        p1[idx] = value
+    for idx, p in zip(range(4), p2_list):
+        value = p.short if p in game.base else '__'
+        p2[idx] = value
+
+    b = deepcopy(game.board)
+    for idx, dot in enumerate(b):
+        if dot is None:
+            b[idx] = '__'
+        else:
+            b[idx] = dot.short
+
+    print(f'            {b[38]} {b[39]} {b[0]}       {p1[0]} {p1[1]}')
+    print(f'            {b[37]} .. {b[1]}       {p1[2]} {p1[3]}')
+    print(f'            {b[36]} .. {b[2]}')
+    print(f'            {b[35]} .. {b[3]}')
+    print(f'{b[30]} {b[31]} {b[32]} {b[33]} {b[34]} .. {b[4]} {b[5]} {b[6]} {b[7]} {b[8]}')
+    print(f'{b[29]}                            {b[9]}')
+    print(f'{b[28]} {b[27]} {b[26]} {b[25]} {b[24]} .. {b[14]} {b[13]} {b[12]} {b[11]} {b[10]}')
+    print(f'            {b[23]} .. {b[15]}')
+    print(f'            {b[22]} .. {b[16]}')
+    print(f'{p2[0]} {p2[1]}       {b[21]} .. {b[17]}')
+    print(f'{p2[2]} {p2[3]}       {b[20]} {b[19]} {b[18]}')
+    print()
 
 
 if __name__ == '__main__':
