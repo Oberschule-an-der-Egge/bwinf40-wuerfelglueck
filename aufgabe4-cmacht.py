@@ -131,7 +131,9 @@ class Game:
             roll = player.roll_dice()
             print(f'-- {player} rolls', roll)
 
-        self.move_pawn(player, roll)
+        # Test, if there are any pawns on the board, then move them
+        if [p for p in player.pawn_list if p not in self.base]:
+            self.move_pawn(player, roll)
 
     def is_position_blocked(self, position):
         if self.board[position]:
