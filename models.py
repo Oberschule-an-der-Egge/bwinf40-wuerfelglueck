@@ -62,7 +62,6 @@ class Game:
         self.board = [None] * 40
         self.round = 1
         self.winner = None
-        self.recursion_terminator = dict()
 
         for pawn in chain(self.p1.pawn_list, self.p2.pawn_list):
             self.base.append(pawn)
@@ -70,17 +69,14 @@ class Game:
         self.activate_pawn(self.p2)
 
     def play_round(self):
-        print(f'======== ROUND {self.round} ===========')
         for player in [self.p1, self.p2]:
             self.one_turn(player)
             if self.winner:
                 return
         self.round += 1
-        print_board(self)
 
     def one_turn(self, player):
         roll = player.roll_dice()
-        print(f'++ {player} rolls', roll)
 
         while roll == 6:
             if self.has_pawn_in_base(player):
@@ -91,7 +87,6 @@ class Game:
             else:
                 self.move_pawn_on_board(player, roll)
             roll = player.roll_dice()
-            print(f'++ {player} rolls', roll)
 
         self.move_pawn_on_board(player, roll)
 
@@ -104,16 +99,6 @@ class Game:
         return False
 
     def clear_position(self, player, roll, position):
-        print(f'-- Clearing position [{position}]...')
-
-        if self.recursion_terminator.get(self.round):
-            if self.recursion_terminator[self.round] > 5:
-                return
-            self.recursion_terminator[self.round] += 1
-        else:
-            self.recursion_terminator[self.round] = 1
-        print(self.recursion_terminator)
-
         pawn = self.board[position]
         if pawn.owner is player:
             self.move_pawn_on_board(player, roll, pawn=pawn)
@@ -149,7 +134,6 @@ class Game:
             success = self.move_pawn_into_goal(pawn, roll, player)
             if not success:
                 alt_pawn = sorted(player.pawn_list, key=attrgetter('moves_to_goal'))[1]
-                print(f'-- Selected alternativ pawn {alt_pawn}')
                 if pawn is alt_pawn or alt_pawn in player.goal:
                     return
                 self.move_pawn_on_board(player, roll, pawn=alt_pawn)
@@ -160,14 +144,12 @@ class Game:
                 self.board[idx] = None
                 self.board[new_idx] = pawn
                 pawn.moves_to_goal -= roll
-                print(f'-- Moving {pawn} by {roll}. To goal: {pawn.moves_to_goal}')
 
     def throw_out_pawn(self, pawn):
         idx = self.board.index(pawn)
         self.board[idx] = None
         self.base.append(pawn)
         pawn.moves_to_goal = 100
-        print('-- Threw out', pawn)
 
     def has_pawn_in_base(self, player):
         for pawn in player.pawn_list:
@@ -181,7 +163,6 @@ class Game:
                 self.base.remove(pawn)
                 pawn.moves_to_goal = 39
                 self.board[player.startpos] = pawn
-                print('-- activated', pawn)
                 return
 
     def is_end_of_board(self, position):
@@ -192,21 +173,17 @@ class Game:
     def move_pawn_into_goal(self, pawn, roll, player):
         moves_in_goal = roll - pawn.moves_to_goal
         if moves_in_goal > 4:
-            print(f'-- {pawn} cannot move into goal: Roll too high')
             return False
         idx_board = self.board.index(pawn)
         idx_goal = moves_in_goal - 1
         if player.goal[idx_goal]:
-            print(f'-- {pawn} cannot move into goal: goal[{idx_goal}] blocked')
             success = self.move_pawn_within_goal(player, roll)
             if success:
-                print(f'-- Moved pawns within goal instead')
                 return True
             return False
         self.board[idx_board] = None
         pawn.moves_to_goal = 100 + idx_goal
         player.goal[idx_goal] = pawn
-        print(f'-- Moving {pawn} into goal[{idx_goal}]')
         return True
 
     def move_pawn_within_goal(self, player, roll):

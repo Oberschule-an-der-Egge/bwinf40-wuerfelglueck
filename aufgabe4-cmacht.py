@@ -17,9 +17,9 @@ vordersten Stein ziehen, der gezogen werden kann.“
 Auch die Zielfelder werden beim Vorrücken einzeln gezählt. (Wer also beispielsweise direkt vor seiner Zielfeldreihe steht,
 kommt mit einer 1 nur auf das Feld a, mit einer 2 nur auf das Feld b usw.; Spielsteine können übersprungen werden.)
 """
-from copy import deepcopy
 from pathlib import Path
-from models_verbose import Player, Game, print_board
+from models import Player, Game
+from models_verbose import Player, Game
 
 
 def read_input(filename='wuerfel1.txt'):
@@ -58,9 +58,7 @@ def do_simulation(player1, player2):
     # cmd = True
     while not game.winner:
     # while cmd is True and not game.winner:
-        print(f'======== ROUND {game.round} ===========')
         game.play_round()
-        print_board(game)
         # if input('Play another round? [Y/n] ') != "":
         #     cmd = False
 
@@ -71,7 +69,12 @@ def do_simulation(player1, player2):
 if __name__ == '__main__':
     players_list = setup(read_input())
 
-    do_simulation(players_list[0], players_list[1])
+    for g in range(200):
+        winner = do_simulation(players_list[0], players_list[1])
+        winner.wins += 1
+    print(f'Player 1 wins {players_list[0].wins}')
+    print(f'Player 2 wins {players_list[1].wins}')
+
     # do_simulation(players_list[1], players_list[2])
     # do_simulation(players_list[2], players_list[3])
 
