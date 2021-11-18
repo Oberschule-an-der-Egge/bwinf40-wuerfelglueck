@@ -114,7 +114,6 @@ class Game:
     def play_round(self):
         self.one_turn(self.p1)
         self.one_turn(self.p2)
-        print('-- Gameboard:', self.board)
         self.round += 1
 
     def one_turn(self, player):
@@ -122,11 +121,12 @@ class Game:
         print(f'-- {player} rolls', roll)
 
         while roll == 6:
-            if self.is_position_blocked(player.startpos):
-                self.clear_position(player, roll, player.startpos)
-                continue
-            elif not self.activate_pawn(player):
-                # No pawns left in base
+            if self.has_pawn_in_base(player):
+                if self.is_position_blocked(player.startpos):
+                    self.clear_position(player, roll, player.startpos)
+                else:
+                    self.activate_pawn(player)
+            else:
                 self.move_pawn(player, roll)
             roll = player.roll_dice()
             print(f'-- {player} rolls', roll)
@@ -139,12 +139,13 @@ class Game:
         return False
 
     def clear_position(self, player, roll, position):
-        print('-- Clearing position...')
+        print(f'-- Clearing position [{position}]...')
         pawn = self.board[position]
         if pawn.owner is player:
             self.move_pawn(player, roll, pawn=pawn)
         else:
             self.throw_out_pawn(pawn)
+            self.move_pawn(player, roll)
 
     def move_pawn(self, player, roll, pawn=None):
         if not pawn:
@@ -168,15 +169,19 @@ class Game:
         pawn.reset_moves_to_goal()
         print('-- Threw out', pawn)
 
+    def has_pawn_in_base(self, player):
+        for pawn in player.pawn_list:
+            if pawn in self.base:
+                return True
+        return False
+
     def activate_pawn(self, player):
         for pawn in player.pawn_list:
             if pawn in self.base:
                 self.base.remove(pawn)
                 self.board[player.startpos] = pawn
-                print('-- Activated', pawn)
-                return True
-        print('!! No pawns in base')
-        return False
+                print('-- activated', pawn)
+                return
 
     def is_end_of_board(self, position):
         if position > (len(self.board) - 1):
