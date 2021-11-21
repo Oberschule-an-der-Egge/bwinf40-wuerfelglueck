@@ -18,14 +18,15 @@ Auch die Zielfelder werden beim Vorrücken einzeln gezählt. (Wer also beispiels
 kommt mit einer 1 nur auf das Feld a, mit einer 2 nur auf das Feld b usw.; Spielsteine können übersprungen werden.)
 """
 from pathlib import Path
-from models import Player, Game
-from models_verbose import Player, Game
+from models import Player, Game, print_board
+# from models_verbose import Player, Game
 
 
 def read_input(filename='wuerfel1.txt'):
     """ Beispieldatei einlesen
-    Die Zeilen in Integer und List umwandeln und Zeilenumbrüche mit .strip() entfernen.
-    Default ist das Aufgabenbeispiel parkplatz0.txt.
+    Die Zeilen in List umwandeln, Zeilenumbrüche mit .strip() entfernen.
+    Anschließend die Zahlen von String->Integer konvertieren.
+    Default ist das Aufgabenbeispiel wuerfel0.txt.
     """
     file = Path('beispieldaten', filename)
     with open(file, 'r') as file_in:
@@ -34,15 +35,17 @@ def read_input(filename='wuerfel1.txt'):
         for num, dice in enumerate(dice_list):
             dice_list[num] = [int(element) for element in dice]
 
-    print(dice_total)
-    print('dice_list', dice_list)
+    print(dice_list)
 
     return dice_list
 
 
 def setup(dice_list):
-    players_list = []
+    """ Spieler anlegen
+    Lege ein Player-Objekt für jeden gegebenen Würfel an.
+    """
 
+    players_list = []
     for dice in dice_list:
         faces = dice.pop(0)
         new_player = Player(dice=dice)
@@ -52,36 +55,63 @@ def setup(dice_list):
 
 
 def do_simulation(player1, player2):
-    print(f"{player1} vs {player2}")
+    """ Führe ein Spiel zwischen zwei Spielern durch
+    """
+    # print(f"{player1} vs {player2}")
     game = Game(player1, player2)
 
-    # cmd = True
-    while not game.winner:
-    # while cmd is True and not game.winner:
+    while not game.winner and game.round < 500:
         game.play_round()
-        # if input('Play another round? [Y/n] ') != "":
-        #     cmd = False
 
-    print(f'{game.winner} has won the game!')
+    if game.round == 500:
+        print("Played 500 rounds, stuck here:")
+        print_board(game)
+
+    # CMD Modus, um Schritt für Schritt durch ein Spiel zu gehen:
+    # cmd = True
+    # while cmd is True and not game.winner:
+    #     game.play_round()
+    #     if input('Play another round? [Y/n] ') != "":
+    #         cmd = False
+
+    # print(f'{game.winner} has won the game!')
+
     return game.winner
+
+
+def play_pair_matches(player1, player2, games_per_pair):
+    """ Simuliere eine gegebene Anzahl an Spielen
+    Startspieler wechseln ab der Hälfte
+    """
+    switch = int(games_per_pair / 2)
+
+    for count in range(games_per_pair):
+        if count <= switch:
+            winner = do_simulation(player1, player2)
+        else:
+            winner = do_simulation(player2, player1)
+        player1.games_played += 1
+        player2.games_played += 1
+        if winner:
+            winner.wins += 1
 
 
 if __name__ == '__main__':
     players_list = setup(read_input())
 
-    for g in range(200):
-        winner = do_simulation(players_list[0], players_list[1])
-        winner.wins += 1
-    print(f'Player 1 wins {players_list[0].wins}')
-    print(f'Player 2 wins {players_list[1].wins}')
+    games_played = 0
+    games_per_pair = 200
+    games_per_player = games_per_pair * (len(players_list) - 1)
 
-    # do_simulation(players_list[1], players_list[2])
-    # do_simulation(players_list[2], players_list[3])
+    # Jeder Spieler (Würfel) tritt gegen jeden anderen Würfel an
+    # 1 vs 2/3/4/5, 2 vs 3/4/5, 3 vs 4/5, 4 vs 5
+    for idx, player in enumerate(players_list):
+        idx += 1
+        while idx in range(len(players_list)):
+            play_pair_matches(player, players_list[idx], games_per_pair)
+            games_played += games_per_pair
+            idx += 1
 
-    # for idx, player in enumerate(players_list):
-    #     # Let every dice play against every other dice
-    #     idx += 1
-    #     print(f"Round {idx}")
-    #     while idx in range(len(players_list)):
-    #         do_simulation(player, players_list[idx])
-    #         idx += 1
+    print(f'Played {games_played} games.')
+    for player in players_list:
+        print(f'{player} with dice {player.dice} has won {player.wins} out of {player.games_played} games. ({(player.wins / player.games_played):.2f} win rate)')

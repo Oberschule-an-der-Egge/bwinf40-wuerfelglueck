@@ -6,11 +6,15 @@ from operator import attrgetter
 
 
 class Player:
+    """ Erzeugt für jeden Würfel ein eindeutig identifizierbares Spieler-Objekt
+    dem vier Spielfiguren zugeordnet werden.
+    """
     counter = 1
 
     def __init__(self, dice):
         self.id = Player.counter
         self.dice = dice
+        self.games_played = 0
         self.wins = 0
         self.pawn_list = []
         for _ in range(4):
@@ -26,6 +30,9 @@ class Player:
 
 
 class Pawn:
+    """ Erzeugt für jedes Spieler-Objekt vier eindeutig identifizierbare Spielfiguren-Objekte
+    (z.B. 1a, 1b, 1c, 1d)
+    """
     counter = 1
     previous_owner = None
 
@@ -49,6 +56,9 @@ class Pawn:
 
 
 class Game:
+    """ Erzeugt ein 'Mensch-ärgere-dich-nicht' Spiel für zwei Spieler.
+    Das Model des Spielfelds besteht aus Start/B-Feldern (base), den Lauffeldern (board) und den Zielfeldern (goal).
+    """
     def __init__(self, p1, p2):
         self.p1 = p1
         self.p1.startpos = 0
@@ -62,6 +72,7 @@ class Game:
         self.board = [None] * 40
         self.round = 1
         self.winner = None
+        self.recursion_terminator = dict()
 
         for pawn in chain(self.p1.pawn_list, self.p2.pawn_list):
             self.base.append(pawn)
@@ -99,6 +110,14 @@ class Game:
         return False
 
     def clear_position(self, player, roll, position):
+        # Bei manchen Würfeln bleiben die letzten beiden Spielfiguren for dem vollen Ziel stecken
+        if self.recursion_terminator.get(self.round):
+            if self.recursion_terminator[self.round] > 5:
+                return
+            self.recursion_terminator[self.round] += 1
+        else:
+            self.recursion_terminator[self.round] = 1
+
         pawn = self.board[position]
         if pawn.owner is player:
             self.move_pawn_on_board(player, roll, pawn=pawn)
@@ -126,11 +145,11 @@ class Game:
             return
         idx = self.board.index(pawn)
         new_idx = idx + roll
-        # Has reached the end of modelled board
+        # Hat das Ende des modellierten Spielfelds erreicht
         if self.is_end_of_board(new_idx):
-            new_idx = new_idx - len(self.board)  # e.g. 43 (0-based) - 40 (1-based) = 3 -> 0,1,2,3 (0-based)
-        # Has reached the goal strip
-        if roll > pawn.moves_to_goal:  # place before goal == 0
+            new_idx = new_idx - len(self.board) - 1
+        # Hat die Zielfelder erreicht
+        if roll > pawn.moves_to_goal:  # Feld vor dem Zielfeld == 0
             success = self.move_pawn_into_goal(pawn, roll, player)
             if not success:
                 alt_pawn = sorted(player.pawn_list, key=attrgetter('moves_to_goal'))[1]
@@ -187,17 +206,27 @@ class Game:
         return True
 
     def move_pawn_within_goal(self, player, roll):
-        # Todo: Might do something to move more strategically, if dice has no 1
         if roll > 3:
             return False
-        for idx, position in enumerate(player.goal):
-            try:
-                if isinstance(position, Pawn) and not player.goal[idx+roll]:
-                    player.goal[idx] = None
-                    player.goal[idx + roll] = position
-                    return True
-            except IndexError:
-                continue
+        for idx, element in enumerate(player.goal):
+            if element is not None:
+                # element ist Spielfigur
+                if idx in [0, 1, 2]:
+                    try:
+                        if not player.goal[idx+roll]:
+                            player.goal[idx] = None
+                            player.goal[idx+roll] = element
+                            return True
+                    except IndexError:
+                        pass
+                if idx in [1, 2, 3]:
+                    try:
+                        if not player.goal[idx-roll]:
+                            player.goal[idx] = None
+                            player.goal[idx-roll] = element
+                            return True
+                    except IndexError:
+                        pass
         return False
 
 
