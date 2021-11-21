@@ -16,6 +16,7 @@ class Player:
         self.dice = dice
         self.games_played = 0
         self.wins = 0
+        self.draws = 0
         self.pawn_list = []
         for _ in range(4):
             new_pawn = Pawn(owner=self)
@@ -39,7 +40,7 @@ class Pawn:
     def __init__(self, owner):
         self.id = ''
         self.owner = owner
-        self.moves_to_goal = 100  # set to 39 with activate_pawn
+        self.moves_to_goal = 100  # wird durch activate_pawn() auf 39 gesetzt werden
         self.position = None
         self.set_id()
 
@@ -147,7 +148,7 @@ class Game:
         new_idx = idx + roll
         # Hat das Ende des modellierten Spielfelds erreicht
         if self.is_end_of_board(new_idx):
-            new_idx = new_idx - len(self.board) - 1
+            new_idx = new_idx - len(self.board)
         # Hat die Zielfelder erreicht
         if roll > pawn.moves_to_goal:  # Feld vor dem Zielfeld == 0
             success = self.move_pawn_into_goal(pawn, roll, player)

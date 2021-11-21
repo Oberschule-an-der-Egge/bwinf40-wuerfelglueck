@@ -19,10 +19,10 @@ kommt mit einer 1 nur auf das Feld a, mit einer 2 nur auf das Feld b usw.; Spiel
 """
 from pathlib import Path
 from models import Player, Game, print_board
-# from models_verbose import Player, Game
+# from models_verbose import Player, Game, print_board
 
 
-def read_input(filename='wuerfel1.txt'):
+def read_input(filename='wuerfel0.txt'):
     """ Beispieldatei einlesen
     Die Zeilen in List umwandeln, Zeilenumbrüche mit .strip() entfernen.
     Anschließend die Zahlen von String->Integer konvertieren.
@@ -94,6 +94,9 @@ def play_pair_matches(player1, player2, games_per_pair):
         player2.games_played += 1
         if winner:
             winner.wins += 1
+        else:
+            player1.draws += 1
+            player2.draws += 1
 
 
 if __name__ == '__main__':
@@ -114,4 +117,4 @@ if __name__ == '__main__':
 
     print(f'Played {games_played} games.')
     for player in players_list:
-        print(f'{player} with dice {player.dice} has won {player.wins} out of {player.games_played} games. ({(player.wins / player.games_played):.2f} win rate)')
+        print(f'{player} with dice {player.dice} has won {player.wins}, drew {player.draws} out of {player.games_played} games. ({(player.wins / player.games_played):.2f} win rate)')
